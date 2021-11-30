@@ -322,11 +322,8 @@ async fn join_room(
     ws_connections: Arc<Mutex<WsConnections>>,
     room_manager: Arc<Mutex<RoomManager>>,
 ) -> Result<(), ChatError> {
-    let room_info = room_manager
-        .lock()
-        .await
-        .join(&req.id.clone(), &conn_id)
-        .await?;
+    let uuid = Uuid::parse_str(&req.id).map_err(|e| e.to_string())?;
+    let room_info = room_manager.lock().await.join(&uuid, &conn_id).await?;
 
     direct(
         Arc::clone(&ws_connections),
@@ -342,6 +339,24 @@ async fn join_room(
     .await
 }
 
+pub async fn send_error(
+    conn_id: Uuid,
+    error_message: &str,
+    ws_connections: Arc<Mutex<WsConnections>>,
+) -> Result<(), ChatError> {
+    direct(
+        Arc::clone(&ws_connections),
+        conn_id,
+        &create_response_str(
+            responses::ResponseType::Error,
+            responses::ResponseError {
+                message: error_message.to_owned(),
+            },
+        )?,
+    )
+    .await
+}
+
 pub async fn switch_request(
     conn_id: Uuid,
     request: requests::Request,
@@ -349,6 +364,7 @@ pub async fn switch_request(
     room_manager: Arc<Mutex<RoomManager>>,
 ) {
     let ws_connections = Arc::clone(&ws_connections);
+    let error_ws_connections = Arc::clone(&ws_connections);
     let room_manager = Arc::clone(&room_manager);
     println!("{:?}", request);
     if let Err(error) = match &request {
@@ -379,6 +395,8 @@ pub async fn switch_request(
             join_room(conn_id, req, ws_connections, room_manager).await
         }
     } {
+        let _ = send_error(conn_id, &error, error_ws_connections).await;
+        
         println!("{:?} failed with msg: '{}'", request, error);
     }
 }

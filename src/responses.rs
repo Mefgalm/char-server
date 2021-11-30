@@ -65,6 +65,12 @@ pub struct RoomJoined {
 }
 
 #[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponseError {
+    pub message: String
+}
+
+#[derive(Serialize, Debug)]
 pub enum ResponseType {
     GetId,
     Online,
@@ -73,7 +79,8 @@ pub enum ResponseType {
     Message,
     GlobalOnline,
     RoomCreated,
-    RoomJoined
+    RoomJoined,
+    Error
 }
 
 #[derive(Serialize, Debug)]

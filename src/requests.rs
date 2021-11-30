@@ -30,7 +30,7 @@ pub struct CreateRoom {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinRoom {
-    pub id: Uuid
+    pub id: String
 }
 
 #[derive(Deserialize, Debug, Clone)]
